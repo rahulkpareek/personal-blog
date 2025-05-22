@@ -25,15 +25,29 @@ namespace BlogProject.Controllers
             }
         }
 
+        private string GetAuthenticatedUsername(HttpContext context)
+        {
+            var authHeader = context.Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(authHeader))
+                return string.Empty;
+
+            var credentialBytes = Convert.FromBase64String(authHeader.Replace("Basic ", ""));
+            var credentials = System.Text.Encoding.UTF8.GetString(credentialBytes).Split(':', 2);
+            return credentials[0];
+        }
+
         [HttpGet]
         [Route("GetArticles")]
         public IActionResult GetArticles()
         {
-            if (_articles == null || _articles.Count == 0)
+            var username = GetAuthenticatedUsername(HttpContext);
+            var userArticles = _articles?.Where(a => a.Author == username).ToList();
+
+            if (userArticles == null || userArticles.Count == 0)
             {
-                return NotFound("No articles found.");
+                return NotFound("No articles found for the current user.");
             }
-            return Ok(_articles);
+            return Ok(userArticles);
         }
 
         [HttpGet]
@@ -45,10 +59,11 @@ namespace BlogProject.Controllers
                 return NotFound("No articles found.");
             }
 
-            var article = _articles.FirstOrDefault(a => a.Id == id);
+            var username = GetAuthenticatedUsername(HttpContext);
+            var article = _articles.FirstOrDefault(a => a.Id == id && a.Author == username);
             if (article == null)
             {
-                return NotFound($"Article with ID {id} not found.");
+                return NotFound($"Article with ID {id} not found or you don't have access to it.");
             }
             return Ok(article);
         }
@@ -62,7 +77,8 @@ namespace BlogProject.Controllers
                 return BadRequest("Title and content cannot be empty.");
             }
 
-            var newArticle = new Article(title, content);
+            var username = GetAuthenticatedUsername(HttpContext);
+            var newArticle = new Article(title, content, username);
             _articles?.Add(newArticle);
 
             SaveArticlesToFile();
@@ -79,10 +95,11 @@ namespace BlogProject.Controllers
                 return NotFound("No articles found.");
             }
 
-            var article = _articles.FirstOrDefault(a => a.Id == id);
+            var username = GetAuthenticatedUsername(HttpContext);
+            var article = _articles.FirstOrDefault(a => a.Id == id && a.Author == username);
             if (article == null)
             {
-                return NotFound($"Article with ID {id} not found.");
+                return NotFound($"Article with ID {id} not found or you don't have access to it.");
             }
 
             if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(content))
@@ -108,14 +125,14 @@ namespace BlogProject.Controllers
                 return NotFound("No articles found.");
             }
 
-            var article = _articles.FirstOrDefault(a => a.Id == id);
+            var username = GetAuthenticatedUsername(HttpContext);
+            var article = _articles.FirstOrDefault(a => a.Id == id && a.Author == username);
             if (article == null)
             {
-                return NotFound($"Article with ID {id} not found.");
+                return NotFound($"Article with ID {id} not found or you don't have access to it.");
             }
 
             _articles.Remove(article);
-
             SaveArticlesToFile();
 
             return Ok($"Article with ID {id} deleted successfully.");

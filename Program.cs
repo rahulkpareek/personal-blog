@@ -1,3 +1,4 @@
+using BlogProject.Middleware;
 using BlogProject.Model;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,10 +34,11 @@ namespace BlogProject
                 {
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Blog API V1");
                 });
-            }
-
-            app.UseHttpsRedirection();
-            app.UseAuthorization();
+            }            app.UseHttpsRedirection();
+            app.UseAuthorization(); 
+            
+            // Add Basic Authentication middleware
+            app.UseBasicAuthentication();
             
             app.MapControllers();
 
