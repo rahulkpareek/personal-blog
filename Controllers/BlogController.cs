@@ -1,11 +1,13 @@
 using BlogProject.Model;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.IO;
 
 namespace BlogProject.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize] // Add this attribute to require authentication for all actions
     public class BlogController : ControllerBase
     {
         private readonly string _jsonFilePath;
